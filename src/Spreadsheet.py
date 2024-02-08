@@ -1,7 +1,11 @@
 import sqlite3
 import re
+import requests
+import json
 
-db = "sc.db"
+database = "sc.db"
+FBASE = "enterprise-ca-d05cd"
+FBASE_URL = f"https://{FBASE}-default-rtdb.europe-west1.firebasedatabase.app/"
 
 class Spreadsheet:
         
@@ -30,7 +34,7 @@ class Spreadsheet:
             return "", 400 # Bad Request
         
         # open connection with database
-        with sqlite3.connect(db) as connection:
+        with sqlite3.connect(database) as connection:
             cursor = connection.cursor()
             
             # check if cell exists
@@ -58,7 +62,7 @@ class Spreadsheet:
         """
         
         # open connection with database
-        with sqlite3.connect(db) as connection:
+        with sqlite3.connect(database) as connection:
             cursor = connection.cursor()
             
             # get the cell
@@ -94,7 +98,7 @@ class Spreadsheet:
             
     def delete(cell_id: str):
         # open connection with database
-        with sqlite3.connect(db) as connection:
+        with sqlite3.connect(database) as connection:
             cursor = connection.cursor()
             
             # check if cell exists
@@ -110,7 +114,7 @@ class Spreadsheet:
         return "", 204
     
     def list_formulas():
-         with sqlite3.connect(db) as connection:
+         with sqlite3.connect(database) as connection:
             cursor = connection.cursor()
             
             # get list of ids
@@ -121,9 +125,40 @@ class Spreadsheet:
             formula_list = [i[0] for i in formulas]
             
             return formula_list
-                
-            
-            
-            
 
+    def firebase_update(cell_id: str, formula: str):
+    
+        # create endpoint
+        endpoint = FBASE_URL + "cells" + f"/{cell_id}.json"
         
+        # check if data exists
+        record = Spreadsheet.firebase_read(cell_id)
+        
+        # if exists update formula else create new
+        if record != None:
+            record["formula"] = formula
+            response_code = 204 # Updated
+        else:
+            record = {"id": cell_id,"formula": formula}
+            response_code = 201 # Created
+        
+        # include the id so can retrieve in firebase_read()
+        record["id"] = cell_id
+        
+        # return response
+        response = requests.put(endpoint, data=json.dumps(record))
+        
+        if response.status_code == 200:
+            return "", response_code
+
+        return "", 500 # Internal Server Error
+        
+
+    def firebase_read(cell_id: str):
+        endpoint = FBASE_URL + "cells" + f"/{cell_id}.json"
+        response = requests.get(endpoint)
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return "", 404

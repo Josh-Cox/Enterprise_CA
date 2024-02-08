@@ -1,1 +1,4 @@
 /venv
+/src/.env
+/src/notes.txt
+/src/sc.db
