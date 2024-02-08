@@ -2,9 +2,14 @@ import sqlite3
 import re
 import requests
 import json
+import os
+# from dotenv import load_dotenv
+
+# load_dotenv()
+FBASE = os.environ['FBASE']
+FBASE_URL = f"https://{FBASE}-default-rtdb.europe-west1.firebasedatabase.app/"
 
 database = "sc.db"
-
 
 class Spreadsheet:
         
