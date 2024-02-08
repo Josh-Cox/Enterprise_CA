@@ -4,8 +4,7 @@ import requests
 import json
 
 database = "sc.db"
-FBASE = "enterprise-ca-d05cd"
-FBASE_URL = f"https://{FBASE}-default-rtdb.europe-west1.firebasedatabase.app/"
+
 
 class Spreadsheet:
         
@@ -157,7 +156,6 @@ class Spreadsheet:
 
         return "", 500 # Internal Server Error
         
-
     def firebase_read(cell_id: str):
         endpoint = FBASE_URL + "cells" + f"/{cell_id}.json"
         response = requests.get(endpoint)
