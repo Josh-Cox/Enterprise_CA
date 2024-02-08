@@ -1,8 +1,6 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import sqlite3
-from Spreadsheet import Spreadsheet
-
-db = "sc.db"
+from Spreadsheet import Spreadsheet, db
 
 app = Flask(__name__)
 
@@ -16,9 +14,8 @@ def create_db():
         cursor.execute("CREATE TABLE IF NOT EXISTS cells" + "(id TEXT PRIMARY KEY, formula TEXT)")
         connection.commit()
 
-
 @app.route("/cells/<url_cell_id>", methods=["PUT"])
-def update(url_cell_id):
+def update(url_cell_id: str):
     """
     Updates row in cells table
     
@@ -32,21 +29,20 @@ def update(url_cell_id):
     cell_id = js.get("id")
     formula = js.get("formula")
     
-    # check they are not null and url value and passed value are equal
+    # check they are not null and that the url value and the passed value are equal
     if cell_id == None or formula == None or url_cell_id != cell_id:
         return "", 400 # Bad request
     
+    # update the database
+    result = Spreadsheet.update(cell_id, formula)
+    
+    if result != None:
+        return result # Created | Updated | Bad Request
     else:
-        # update the database
-        result = Spreadsheet.update(cell_id, formula)
-        
-        if result != None:
-            return result # Created | Updated | Bad Request
-        else:
-            return "", 500 # Internal Server Error
+        return "", 500 # Internal Server Error
         
 @app.route("/cells/<url_cell_id>", methods=["GET"])
-def read(url_cell_id):
+def read(url_cell_id: str):
     """
     Reads row in cells table
     
@@ -61,28 +57,33 @@ def read(url_cell_id):
     else:
         return "", 500 # Internal Server Error
 
-def test_read(cell_id):
-    print(Spreadsheet.read(cell_id))
+@app.route("/cells/<url_cell_id>", methods=["DELETE"])
+def delete(url_cell_id: str):
+    """
+    Deletes row from cells table
 
-def test_update(cell_id, formula):
-    Spreadsheet.update(cell_id, formula)
+    :param url_cell_id: id of cell to delete
+    """
+    
+    result = Spreadsheet.delete(url_cell_id)
+    
+    if result != None:
+        return result
+    else:
+        return "", 500 # Internal Server Error
 
-def print_db():
-    with sqlite3.connect(db) as connection:
-        cursor = connection.cursor()
-        cursor.execute("SELECT * FROM cells")
-        result = cursor.fetchall()
-        
-        for x in result:
-            print(x)
-
+@app.route("/cells", methods=["GET"])
+def list_formulas():
+    """
+    Lists id of every row
+    """
+    result = Spreadsheet.list_formulas()
+    
+    if result != None:
+        return jsonify(result), 200
+    else:
+        return "", 500 # Internal Server Error
 
 if __name__ == "__main__":
     create_db()
-    # app.run(host="localhost", port=3000)
-    # print(test_update("B2", "B3 + 4"))
-    # test_update("B3", "7")
-    test_update("D4D", "B4 * B3")
-    # test_update("BB6Z8", " (-B3 + B4 ) *B2")
-    # test_read("B2")
-    # print_db()
+    app.run(host="localhost", port=3000)
