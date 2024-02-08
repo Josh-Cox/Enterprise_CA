@@ -77,7 +77,7 @@ def read(url_cell_id: str):
         result = Spreadsheet.read(url_cell_id)
     
     if result != None:
-        return result, 200 # Created or Updated
+        return result # Created or Updated
     else:
         return "", 500 # Internal Server Error
 

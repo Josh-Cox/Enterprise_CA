@@ -54,7 +54,7 @@ class Spreadsheet:
                 
                 return "", 204 # Updated
             
-    def read(cell_id: str):
+    def read(cell_id: str, recursive=False):
         """
         Return the contents of a cell
         
@@ -71,7 +71,11 @@ class Spreadsheet:
         
         # if doesn't exist then return 0
         if record == None:
-            return {"id":cell_id,"formula":0}
+            # check if call was recursive or direct
+            if recursive == True:
+                return {"id":cell_id,"formula":0}
+            else:
+                return "", 404
         
         # get id and formula
         cell_id = record[0]
@@ -90,11 +94,11 @@ class Spreadsheet:
         # loop through element, recurisvely calling if element is cell_id (contains a letter)
         for element in formula:
             if re.search('[a-zA-Z]', element) != None:
-                element = Spreadsheet.read(element)["formula"]
+                element = Spreadsheet.read(element, True)["formula"]
                 
             result += str(element) + " "
             
-        return {"id":cell_id,"formula":eval(result)}
+        return {"id":cell_id,"formula":eval(result)}, 200
             
     def delete(cell_id: str):
         # open connection with database
