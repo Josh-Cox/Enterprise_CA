@@ -20,8 +20,6 @@ method = "s"
 if args.r.lower() == "firebase":
     method = "f"
 
-print(method)
-
 def create_db():
     """
     Create database with "cells" table
@@ -52,10 +50,7 @@ def update(url_cell_id: str):
         return "", 400 # Bad request
     
     # update the correct database
-    if method != "s":
-        result = Spreadsheet.firebase_update(cell_id, formula)
-    else:
-        result = Spreadsheet.update(cell_id, formula)
+    result = Spreadsheet.update(cell_id, formula, method)
     
     if result != None:
         return result # Created | Updated | Bad Request
@@ -71,15 +66,14 @@ def read(url_cell_id: str):
     """
     
     # update the database
-    if method != "s":
-        result = Spreadsheet.firebase_read(url_cell_id)
-    else:
-        result = Spreadsheet.read(url_cell_id)
+    result = Spreadsheet.read(url_cell_id, method)
     
-    if result != None:
-        return result # Created or Updated
-    else:
+    if result == None:
         return "", 500 # Internal Server Error
+    elif result == "":
+        return "", 404 # Not found
+    else:
+        return result # Created or Updated
 
 @app.route("/cells/<url_cell_id>", methods=["DELETE"])
 def delete(url_cell_id: str):
@@ -89,8 +83,9 @@ def delete(url_cell_id: str):
     :param url_cell_id: id of cell to delete
     """
     
-    result = Spreadsheet.delete(url_cell_id)
+    result = Spreadsheet.delete(url_cell_id, method)
     
+    # check sql didn't go wrong
     if result != None:
         return result
     else:
