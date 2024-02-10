@@ -73,7 +73,7 @@ def read(url_cell_id: str):
     elif result == "":
         return "", 404 # Not found
     else:
-        return result # Created or Updated
+        return result, 200 # Created or Updated
 
 @app.route("/cells/<url_cell_id>", methods=["DELETE"])
 def delete(url_cell_id: str):
@@ -92,18 +92,20 @@ def delete(url_cell_id: str):
         return "", 500 # Internal Server Error
 
 @app.route("/cells", methods=["GET"])
-def list_formulas():
+def list_cells():
     """
     Lists id of every row
     """
-    result = Spreadsheet.list_formulas()
+    result = Spreadsheet.list_cells(method)
     
     if result != None:
-        return jsonify(result), 200
+        return result, 200
     else:
         return "", 500 # Internal Server Error
 
 
 if __name__ == "__main__":
-    # create_db()
+    create_db()
     app.run(host="localhost", port=3000)
+    print(Spreadsheet.list_cells(method))
+    

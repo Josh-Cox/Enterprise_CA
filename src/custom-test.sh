@@ -6,7 +6,7 @@
 HOST=localhost:3000
 DB_FILE=sc.db
 
-rm -f $DB_FILE
+# rm -f $DB_FILE
 
 SCORE=0
 NUM_TESTS=0

@@ -75,7 +75,7 @@ class Spreadsheet:
                 response_code = 204 # Updated
             
             # include the id so can retrieve in read()
-            record["id"] = cell_id
+            # record["id"] = cell_id
             
             # return response
             response = requests.put(endpoint, data=json.dumps(record))
@@ -97,15 +97,18 @@ class Spreadsheet:
         if method == "s":
             # open connection with database
             with sqlite3.connect(database) as connection:
+                connection.row_factory = sqlite3.Row
                 cursor = connection.cursor()
                 
                 # get the cell
                 cursor.execute("SELECT id, formula FROM cells WHERE id = ?", (cell_id,))
                 record = cursor.fetchone()
+
         else:
             endpoint = FBASE_URL + "cells" + f"/{cell_id}.json"
             response = requests.get(endpoint)
             record = response.json()
+            
             
         # if doesn't exist then return 0 or error 404
         if record == None:
@@ -136,7 +139,7 @@ class Spreadsheet:
                 
             result += str(element) + " "
             
-        return {"id":cell_id,"formula":eval(result)}, 200
+        return {"id":cell_id,"formula":eval(result)}
             
     def delete(cell_id: str, method: str):
         """
@@ -181,15 +184,24 @@ class Spreadsheet:
             # if nothing went wrong return 204
             return "", 204 # Deleted
     
-    def list_formulas():
-         with sqlite3.connect(database) as connection:
-            cursor = connection.cursor()
+    def list_cells(method: str):
+        
+        # check sql or firebase
+        if method == "s":
+            with sqlite3.connect(database) as connection:
+                cursor = connection.cursor()
+                
+                # get list of ids
+                cursor.execute("SELECT id FROM cells")
+                
+                # convert from list of tuples to list and return as json
+                return json.dumps([cell[0] for cell in cursor.fetchall()]) 
+        else:
+            endpoint = FBASE_URL + "cells.json"
+            response = requests.get(endpoint)
             
-            # get list of ids
-            cursor.execute("SELECT id FROM cells")
-            
-            # convert from list of tuples to list
-            formulas = cursor.fetchall()
-            formula_list = [i[0] for i in formulas]
-            
-            return formula_list
+            if response.status_code == 200:
+                return json.dumps(list(response.json().keys()))
+
+            else:
+                return None
