@@ -19,16 +19,7 @@ method = "s"
 # if firebase used then use firebase realtime database
 if args.r.lower() == "firebase":
     method = "f"
-
-def create_db():
-    """
-    Create database with "cells" table
-    """
-    
-    with sqlite3.connect(database) as connection:
-        cursor = connection.cursor()
-        cursor.execute("CREATE TABLE IF NOT EXISTS cells" + "(id TEXT PRIMARY KEY, formula TEXT)")
-        connection.commit()
+        
 
 @app.route("/cells/<url_cell_id>", methods=["PUT"])
 def update(url_cell_id: str):
@@ -105,7 +96,5 @@ def list_cells():
 
 
 if __name__ == "__main__":
-    create_db()
+    Spreadsheet.setup_db()
     app.run(host="localhost", port=3000)
-    print(Spreadsheet.list_cells(method))
-    

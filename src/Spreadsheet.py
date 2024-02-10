@@ -13,6 +13,31 @@ FBASE_URL = f"https://{FBASE}-default-rtdb.europe-west1.firebasedatabase.app/"
 database = "sc.db"
 
 class Spreadsheet:
+    
+    def setup_db():
+        """
+        Create sql database with "cells" table
+        Wipe firebase realtime database
+        """
+        
+        # deltet the database
+        try:
+            os.remove(database)#
+        except Exception as e:
+            return "", 500 # Internal server error
+    
+        # recreate the database
+        with sqlite3.connect(database) as connection:
+            cursor = connection.cursor()
+            cursor.execute("CREATE TABLE IF NOT EXISTS cells" + "(id TEXT PRIMARY KEY, formula TEXT)")
+            connection.commit()
+            
+        # delete all values in firebase realtime database
+        endpoint = FBASE_URL + ".json"
+        response = requests.delete(endpoint)
+        
+        if response.status_code != 200:
+            return "", 500 # Internal Server Error
         
     def update(cell_id: str, formula: str, method: str):
         """
@@ -29,13 +54,10 @@ class Spreadsheet:
         if formula == "":
             formula = "0"
         
-        # check for double operators E.g. -+ ** ++ (--, +- *- are allowed as - unary)
-        if re.findall("[+-/*][+/*]", formula) != []:
+        # check for double operators, number then letter (E.g. 2B2), start with +*/, isn't just an operartor, check id is valid
+        if re.findall("[+-/*][+/*]|[0-9][A-DF-Za-df-z]|^[+/*]|^[-]$|[+-/*]$", formula) or re.findall("^(?![A-Za-z]+\d+$).*", cell_id) != []:
             return "", 400 # Bad request
-        
-        # check id is valid (1 or more letters then 1 or more numbers)
-        if re.findall("^(?![A-Za-z]+\d+$).*", cell_id) != []:
-            return "", 400 # Bad Request
+
         
         # check sql or firebase
         if method == "s":
@@ -122,9 +144,9 @@ class Spreadsheet:
         cell_id = record['id']
         formula = record['formula']
         
-        # check if formula contains any other cells
-        if re.search('[a-zA-Z]', formula) == None:
-            return {"id":cell_id,"formula":eval(formula)}
+        # check if formula contains any other cells (any letter exlcuding Ee if it has a number before it)
+        if re.findall('(?<![0-9])[Ee]|[A-Da-dF-Zf-z]', formula) == []:
+            return {"id":cell_id,"formula":str(eval(formula))}
             
         # split elements by operators and brackets
         formula = re.split(r"([-*+/()])", formula)
@@ -134,12 +156,12 @@ class Spreadsheet:
         
         # loop through element, recurisvely calling if element is cell_id (contains a letter)
         for element in formula:
-            if re.search('[a-zA-Z]', element) != None:
+            if re.search('(?<![0-9])[Ee]|[A-Da-dF-Zf-z]', element) != None:
                 element = Spreadsheet.read(element, method, True)["formula"]
                 
-            result += str(element) + " "
+            result += str(element)
             
-        return {"id":cell_id,"formula":eval(result)}
+        return {"id":cell_id,"formula":str(eval(result))}
             
     def delete(cell_id: str, method: str):
         """
@@ -201,7 +223,9 @@ class Spreadsheet:
             response = requests.get(endpoint)
             
             if response.status_code == 200:
-                return json.dumps(list(response.json().keys()))
-
+                if response.json() != None:
+                    return json.dumps(list(response.json().keys()))
+                else:
+                    return json.dumps([])
             else:
                 return None
