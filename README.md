@@ -119,3 +119,13 @@ chmod +x <your_script_name>.sh
 <br>
 
 **IMPORTANT: Everytime `SC.py` is run, it will wipe the respective database**
+
+<br>
+
+|                    |                                            |
+| :----------------: | :----------------------------------------: |
+|      `Author`      |                  Josh Cox                  |
+| `test10.sh Author` |               David Wakeling               |
+|     `License`      |                    MIT                     |
+|   `Source Code`    | https://github.com/Josh-Cox/Enterprise_CA/ |
+|                    |                                            |
