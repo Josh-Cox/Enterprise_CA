@@ -1,9 +1,5 @@
-from flask import Flask, jsonify, request
-from Spreadsheet import Spreadsheet, database
-import sqlite3
-import requests
-import os
-import sys
+from flask import Flask, request
+from Spreadsheet import Spreadsheet
 import argparse
 
 app = Flask(__name__)
@@ -96,5 +92,5 @@ def list_cells():
 
 
 if __name__ == "__main__":
-    Spreadsheet.setup_db()
+    Spreadsheet.setup_db(method)
     app.run(host="localhost", port=3000)

@@ -3,41 +3,47 @@ import re
 import requests
 import json
 import os
-from flask import jsonify
-# from dotenv import load_dotenv
 
-# load_dotenv()
-FBASE = os.environ['FBASE']
-FBASE_URL = f"https://{FBASE}-default-rtdb.europe-west1.firebasedatabase.app/"
-
-database = "sc.db"
 
 class Spreadsheet:
     
-    def setup_db():
+    def setup_db(method: str):
         """
         Create sql database with "cells" table
         Wipe firebase realtime database
         """
         
-        # deltet the database
-        try:
-            os.remove(database)#
-        except Exception as e:
-            return "", 500 # Internal server error
-    
-        # recreate the database
-        with sqlite3.connect(database) as connection:
-            cursor = connection.cursor()
-            cursor.execute("CREATE TABLE IF NOT EXISTS cells" + "(id TEXT PRIMARY KEY, formula TEXT)")
-            connection.commit()
+        # When using sqlite, won't error if FBASE is not defined
+        if method == 'f':
+            global FBASE
+            FBASE = os.environ['FBASE']
+            global FBASE_URL
+            FBASE_URL = f"https://{FBASE}-default-rtdb.europe-west1.firebasedatabase.app/"
             
-        # delete all values in firebase realtime database
-        endpoint = FBASE_URL + ".json"
-        response = requests.delete(endpoint)
+            # delete all values in firebase realtime database
+            endpoint = FBASE_URL + ".json"
+            response = requests.delete(endpoint)
+            
+            if response.status_code != 200:
+                return "", 500 # Internal Server Error
+
+        else:
+            global database
+            database = "sc.db"
+            
+            # delete the database
+            try:
+                os.remove(database)#
+            except Exception as e:
+                pass
         
-        if response.status_code != 200:
-            return "", 500 # Internal Server Error
+            # recreate the database
+            with sqlite3.connect(database) as connection:
+                cursor = connection.cursor()
+                cursor.execute("CREATE TABLE IF NOT EXISTS cells" + "(id TEXT PRIMARY KEY, formula TEXT)")
+                connection.commit()
+            
+  
         
     def update(cell_id: str, formula: str, method: str):
         """
