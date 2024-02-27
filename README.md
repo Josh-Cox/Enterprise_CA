@@ -63,8 +63,8 @@ To run the microservice, open a terminal and run the `SC.py` command with the de
   Determines which database is used
 
 ```sh
-python3 SC.py -r sqlite
-pyhton3 SC.py -r firebase
+python3 sc.py -r sqlite
+pyhton3 sc.py -r firebase
 ```
 
 The microservice will now be running, to use it open another terminal and use `curl`.
